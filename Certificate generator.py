@@ -3,7 +3,7 @@
 
 # # Makefile generator for chirpstack platform 
 
-# In[95]:
+# In[ ]:
 
 
 from pathlib import Path
@@ -11,28 +11,59 @@ import os
 import datetime
 
 
-# In[109]:
+# In[ ]:
+
+
+# Archiving old certificates
+if os.path.isfile("certificates"):
+    os.rename("certificates", "old-"+str(datetime.datetime.now()).split(" ")[0]+"-certificates")
+
+
+# In[ ]:
 
 
 # Variables
 
-destination = "Afnic"
-root = destination + "-" + str(datetime.datetime.now()).split(" ")[0] + "-certificates/"
+folder_destination = "Afnic"
+entity = "Afnic"
 
+# File Names
+## Application Server Generic Name
+app_server_generic_name = "Application Server " + entity
+## Network Server Generic Name - Not Used - NetID used instead
+net_server_generic_name = "Network Server " + entity
+## Join Server Generic Name
+join_server_generic_name = "Join Server " + entity
+## Roaming Server Generic Name
+roaming_server_generic_name = "Join Server " + entity
+
+# Identifier
+## Application Server Generic Identifier - Used in Chirpstack AS config
+app_server_identifier = "00000000-0000-0000-0000-000000000000"
+## NetID as provided by LoRa Alliance
 net_id = "000000"
 
+# Addresses
+## Application Server IP Address
 app_server_ip = "51.91.79.176"
-join_server_ip = app_server_ip
+## Network Server IP Address
 net_server_ip = "51.178.80.199"
+## Join Server IP Address
+join_server_ip = app_server_ip
 
+# Hostnames - Associated with certificates
+## Application Server Hosts
 app_server_hosts = ["127.0.0.1","localhost", app_server_ip]
+## Join Server Hosts - default is Application Server Hosts + Additional JoinEUI names
 join_server_hosts = app_server_hosts.copy()
+## Network Server Hosts
 net_server_hosts = ["127.0.0.1","localhost", net_server_ip]
+## Roaming Server Hosts - default is Network Server Hosts + Additional NetID name
 roaming_server_hosts = net_server_hosts.copy()
-# Appending join server domains
+
+## Setting additional names for roaming interfaces
 
 join_server_domains = []
-
 for i in join_server_domains:
     join_server_hosts.append(i)
     
@@ -40,7 +71,7 @@ roaming_server_domain = net_id+".netid.iotreg.net"
 roaming_server_hosts.append(roaming_server_domain)
 
 
-# In[110]:
+# In[ ]:
 
 
 def list_to_string(list):
@@ -53,135 +84,143 @@ def list_to_string(list):
     return return_string[:-1]+"]"
 
 
-# In[111]:
+# In[ ]:
+
+
+def configuration_string(CN, hosts, key_algo="rsa", key_size=2048):
+    config = '{\n\t"CN" : "'+ CN + '",\n\t"hosts": '+ list_to_string(hosts) + ',\n\t"key": {\n\t\t"algo":" '+ key_algo +'",\n\t\t"size": ' +str(key_size)+'\n\t}\n}'
+    return config
+
+
+# In[ ]:
 
 
 # Creating system folders
 
 Path("certificates/config").mkdir(parents=True, exist_ok=True) 
-Path("certificates/certs").mkdir(parents=True, exist_ok=True) 
+Path("certificates/config").mkdir(parents=True, exist_ok=True) 
 
 
-# In[112]:
+# In[ ]:
 
 
 # Generating Application Server - Server Certificate
-Path(root+"config/application-server/api/server").mkdir(parents=True, exist_ok=True) 
+Path("certificates/config/application-server/api/server").mkdir(parents=True, exist_ok=True) 
 
-filename = root+"config/application-server/api/server/certificate.json"
-file_content ='{\n\t"CN" : "TSP-Application-Server",\n\t"host": '+ list_to_string(app_server_hosts) + ',\n\t"key": {\n\t\t"algo": "rsa",\n\t\t"size": 2048\n\t}\n}'
+filename = "certificates/config/application-server/api/server/certificate.json"
+file_content = configuration_string(app_server_generic_name,app_server_hosts)
 
 app_server_file = open(filename, 'w')
 app_server_file.write(file_content)
 app_server_file.close()
 
-print("Written : \n" + file_content + "\n to \n" + filename)
+print("\nWritten : \n" + file_content + "\nto\n" + filename + "\n")
 
 
-# In[113]:
+# In[ ]:
 
 
 # Generating Application Server - Client Certificate
 
-Path(root+"config/application-server/api/client").mkdir(parents=True, exist_ok=True) 
+Path("certificates/config/application-server/api/client").mkdir(parents=True, exist_ok=True) 
 
-filename = root+"config/application-server/api/client/certificate.json"
-file_content ='{\n\t"CN" : "'+ net_id+'",\n\t"host": '+ list_to_string(net_server_hosts) + ',\n\t"key": {\n\t\t"algo": "rsa",\n\t\t"size": 2048\n\t}\n}'
+filename = "certificates/config/application-server/api/client/certificate.json"
+file_content = configuration_string(net_id,net_server_hosts)
 
 app_server_file = open(filename, 'w')
 app_server_file.write(file_content)
 app_server_file.close()
 
-print("Written : \n" + file_content + "\n to \n" + filename)
+print("\nWritten : \n" + file_content + "\nto\n" + filename + "\n")
 
 
-# In[114]:
+# In[ ]:
 
 
 # Generating Join Server - Server Certificate
 
-Path(root+"config/application-server/join-api/server").mkdir(parents=True, exist_ok=True) 
+Path("certificates/config/application-server/join-api/server").mkdir(parents=True, exist_ok=True) 
 
-filename = root+"config/application-server/join-api/server/certificate.json"
-file_content ='{\n\t"CN" : "'+ "Afnic-AS-Join-API" +'",\n\t"host": '+ list_to_string(join_server_hosts) + ',\n\t"key": {\n\t\t"algo": "rsa",\n\t\t"size": 2048\n\t}\n}'
+filename = "certificates/config/application-server/join-api/server/certificate.json"
+file_content = configuration_string(join_server_generic_name,join_server_hosts)
 
 join_server_file = open(filename, 'w')
 join_server_file.write(file_content)
 join_server_file.close()
 
-print("Written : \n" + file_content + "\n to \n" + filename)
+print("\nWritten : \n" + file_content + "\nto\n" + filename + "\n")
 
 
-# In[115]:
+# In[ ]:
 
 
 # Generating Join Server - Client Certificate
 
-Path(root+"config/application-server/join-api/client").mkdir(parents=True, exist_ok=True) 
+Path("certificates/config/application-server/join-api/client").mkdir(parents=True, exist_ok=True) 
 
-filename = root+"config/application-server/join-api/client/certificate.json"
-file_content ='{\n\t"CN" : "'+ net_id +'",\n\t"host": '+ list_to_string(net_server_hosts) + ',\n\t"key": {\n\t\t"algo": "rsa",\n\t\t"size": 2048\n\t}\n}'
+filename = "certificates/config/application-server/join-api/client/certificate.json"
+file_content = configuration_string(net_id,net_server_hosts)
 
 join_server_file = open(filename, 'w')
 join_server_file.write(file_content)
 join_server_file.close()
 
-print("Written : \n" + file_content + "\n to \n" + filename)
+print("\nWritten : \n" + file_content + "\nto\n" + filename + "\n")
 
 
-# In[116]:
+# In[ ]:
 
 
 # Generating Network Server - Server Certificate
 
-Path(root+"config/network-server/api/server").mkdir(parents=True, exist_ok=True) 
+Path("certificates/config/network-server/api/server").mkdir(parents=True, exist_ok=True) 
 
-filename = root+"config/network-server/api/server/certificate.json"
-file_content ='{\n\t"CN" : "'+ "Afnic-Network-Server" +'",\n\t"host": '+ list_to_string(net_server_hosts) + ',\n\t"key": {\n\t\t"algo": "rsa",\n\t\t"size": 2048\n\t}\n}'
+filename = "certificates/config/network-server/api/server/certificate.json"
+file_content = configuration_string(net_server_generic_name,net_server_hosts)
 
 net_server_file = open(filename, 'w')
 net_server_file.write(file_content)
 net_server_file.close()
 
-print("Written : \n" + file_content + "\n to \n" + filename)
+print("\nWritten : \n" + file_content + "\nto\n" + filename + "\n")
 
 
-# In[117]:
+# In[ ]:
 
 
 # Generating Network Server - Client Certificate
 
-Path(root+"config/network-server/api/client").mkdir(parents=True, exist_ok=True) 
+Path("certificates/config/network-server/api/client").mkdir(parents=True, exist_ok=True) 
 
-filename = root+"config/network-server/api/client/certificate.json"
-file_content ='{\n\t"CN" : "'+ "00000000-0000-0000-0000-000000000000" +'",\n\t"host": '+ list_to_string(app_server_hosts) + ',\n\t"key": {\n\t\t"algo": "rsa",\n\t\t"size": 2048\n\t}\n}'
+filename = "certificates/config/network-server/api/client/certificate.json"
+file_content = configuration_string(app_server_identifier,app_server_hosts)
 
 net_server_file = open(filename, 'w')
 net_server_file.write(file_content)
 net_server_file.close()
 
-print("Written : \n" + file_content + "\n to \n" + filename)
+print("\nWritten : \n" + file_content + "\nto\n" + filename + "\n")
 
 
-# In[118]:
+# In[ ]:
 
 
 # Generating Roaming Server - Server Certificate
-roaming_path = root+"config/network-server/roaming/" + net_id
+roaming_path = "certificates/config/network-server/roaming/" + net_id
 
 Path(roaming_path + "/server").mkdir(parents=True, exist_ok=True) 
 
 filename = roaming_path + "/server/certificate.json"
-file_content ='{\n\t"CN" : "'+ net_id +'",\n\t"host": '+ list_to_string(roaming_server_hosts) + ',\n\t"key": {\n\t\t"algo": "rsa",\n\t\t"size": 2048\n\t}\n}'
+file_content = configuration_string(net_id,roaming_server_hosts)
 
 net_server_file = open(filename, 'w')
 net_server_file.write(file_content)
 net_server_file.close()
 
-print("Written : \n" + file_content + "\n to \n" + filename)
+print("\nWritten : \n" + file_content + "\nto\n" + filename + "\n")
 
 
-# In[119]:
+# In[ ]:
 
 
 # Generating Roaming Server - Server Certificate
@@ -189,13 +228,58 @@ print("Written : \n" + file_content + "\n to \n" + filename)
 Path(roaming_path + "/client").mkdir(parents=True, exist_ok=True)
 
 filename = roaming_path + "/client/certificate.json"
-file_content ='{\n\t"CN" : "'+ net_id +'",\n\t"host": '+ '[\"\"]' + ',\n\t"key": {\n\t\t"algo": "rsa",\n\t\t"size": 2048\n\t}\n}'
+file_content = configuration_string(net_id,[""])
 
 net_server_file = open(filename, 'w')
 net_server_file.write(file_content)
 net_server_file.close()
 
-print("Written : \n" + file_content + "\n to \n" + filename)
+print("\nWritten : \n" + file_content + "\nto\n" + filename + "\n")
+
+
+# In[ ]:
+
+
+root = folder_destination + "-" + str(datetime.datetime.now()).split(" ")[0] + "-certificates/"
+if not os.path.isfile(root):
+    os.rename(root, root[:-1]+"-old")
+os.rename("certificates", root)
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
